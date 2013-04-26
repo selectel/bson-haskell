@@ -144,13 +144,13 @@ getString = do
 
 putDocumentWithSize :: Document -> PutM Int32
 putDocumentWithSize es =
-  let b = runPut (mapM_ putField es)
-      len = (toEnum . fromEnum) (LC.length b + 5)  -- include length and null terminator
-  in do
-    putInt32 len
-    putLazyByteString b
-    putWord8 0
-    return len
+	let b = runPut (mapM_ putField es)
+	    len = (toEnum . fromEnum) (LC.length b + 5)  -- include length and null terminator
+	in do
+		  putInt32 len
+		  putLazyByteString b
+		  putWord8 0
+		  return len
 
 putDocument :: Document -> Put
 putDocument es = const () <$> putDocumentWithSize es
