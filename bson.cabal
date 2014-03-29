@@ -9,7 +9,7 @@ Description:   A BSON Document is an untyped (dynamically type-checked) record.
                and special types (Binary, Javascript, ObjectId, RegEx, and a few
                others).
 
-	           A BSON Document is serialized to a standard binary encoding
+               A BSON Document is serialized to a standard binary encoding
                defined at <http://bsonspec.org>. This implements version 1 of
                that spec.
 Category:      Data
