@@ -8,32 +8,40 @@ module Data.Bson.Binary (
     putCString, getCString
 ) where
 
-import Prelude hiding (length, concat)
-import Control.Applicative ((<$>), (<*>))
-import Control.Monad (when)
-import Data.Binary.Get (Get, runGet, getWord8, getWord32be, getWord64be,
-                        getWord32le, getWord64le, getLazyByteStringNul,
-                        getLazyByteString, getByteString, lookAhead)
-import Data.Binary.Put (Put, runPut, putWord8, putWord32le, putWord64le,
-                        putWord32be, putWord64be, putLazyByteString,
-                        putByteString)
-import Data.Binary.IEEE754 (getFloat64le, putFloat64le)
-import Data.ByteString (ByteString)
-import Data.Int (Int32, Int64)
-import Data.Time.Clock (UTCTime)
-import Data.Time.Clock.POSIX (posixSecondsToUTCTime, utcTimeToPOSIXSeconds)
-import Data.Word (Word8)
+import           Control.Applicative        ((<$>), (<*>))
+import           Control.Monad              (when)
+import           Data.Binary.Get            (Get, getByteString,
+                                             getLazyByteString,
+                                             getLazyByteStringNul, getWord32be,
+                                             getWord32le, getWord64be,
+                                             getWord64le, getWord8, lookAhead,
+                                             runGet)
+import           Data.Binary.IEEE754        (getFloat64le, putFloat64le)
+import           Data.Binary.Put            (Put, putByteString,
+                                             putLazyByteString, putWord32be,
+                                             putWord32le, putWord64be,
+                                             putWord64le, putWord8, runPut)
+import           Data.ByteString            (ByteString)
+import           Data.Int                   (Int32, Int64)
+import           Data.Time.Clock            (UTCTime)
+import           Data.Time.Clock.POSIX      (posixSecondsToUTCTime,
+                                             utcTimeToPOSIXSeconds)
+import           Data.Word                  (Word8)
+import           Prelude                    hiding (concat, length)
 
-import qualified Data.ByteString.Char8 as SC
+import qualified Data.ByteString.Char8      as SC
 import qualified Data.ByteString.Lazy.Char8 as LC
 
-import Data.Text (Text)
-import qualified Data.Text as T
-import qualified Data.Text.Encoding as TE
+import           Data.Text                  (Text)
+import qualified Data.Text                  as T
+import qualified Data.Text.Encoding         as TE
 
-import Data.Bson (Document, Value(..), ObjectId(..), MongoStamp(..), Symbol(..),
-                  Javascript(..), UserDefined(..), Regex(..), MinMaxKey(..),
-                  Binary(..), UUID(..), Field(..), MD5(..), Function(..))
+import           Data.Bson                  (Binary (..), Document, Field (..),
+                                             Function (..), Javascript (..),
+                                             MD5 (..), MinMaxKey (..),
+                                             MongoStamp (..), ObjectId (..),
+                                             Regex (..), Symbol (..), UUID (..),
+                                             UserDefined (..), Value (..))
 
 putField :: Field -> Put
 -- ^ Write binary representation of element

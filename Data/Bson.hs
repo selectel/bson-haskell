@@ -4,10 +4,15 @@
 -- Use the GHC language extension /OverloadedStrings/ to automatically convert
 -- String literals to Text
 
-{-# LANGUAGE OverloadedStrings, TypeSynonymInstances, FlexibleInstances #-}
-{-# LANGUAGE DeriveDataTypeable, RankNTypes, OverlappingInstances #-}
-{-# LANGUAGE IncoherentInstances, ScopedTypeVariables #-}
-{-# LANGUAGE ForeignFunctionInterface, BangPatterns #-}
+{-# LANGUAGE DeriveDataTypeable       #-}
+{-# LANGUAGE FlexibleInstances        #-}
+{-# LANGUAGE ForeignFunctionInterface #-}
+{-# LANGUAGE IncoherentInstances      #-}
+{-# LANGUAGE OverlappingInstances     #-}
+{-# LANGUAGE OverloadedStrings        #-}
+{-# LANGUAGE RankNTypes               #-}
+{-# LANGUAGE ScopedTypeVariables      #-}
+{-# LANGUAGE TypeSynonymInstances     #-}
 
 module Data.Bson (
     -- * Document
@@ -24,35 +29,37 @@ module Data.Bson (
     ObjectId(..), timestamp, genObjectId
 ) where
 
-import Prelude hiding (lookup)
-import Control.Applicative ((<$>), (<*>))
-import Control.Monad (foldM)
-import Data.Bits (shift, (.|.))
-import Data.Int (Int32, Int64)
-import Data.IORef (IORef, newIORef, atomicModifyIORef)
-import Data.List (find, findIndex)
-import Data.Maybe (maybeToList, mapMaybe)
-import Data.Time.Clock (UTCTime)
-import Data.Time.Clock.POSIX (POSIXTime, posixSecondsToUTCTime,
-                              utcTimeToPOSIXSeconds, getPOSIXTime)
-import Data.Time.Format ()  -- for Show and Read instances of UTCTime
-import Data.Typeable hiding (cast)
-import Data.Word (Word8, Word16, Word32, Word64)
-import Numeric (readHex, showHex)
-import System.IO.Unsafe (unsafePerformIO)
-import Text.Read (Read(..))
+import           Control.Applicative             ((<$>), (<*>))
+import           Control.Monad                   (foldM)
+import           Data.Bits                       (shift, (.|.))
+import           Data.Int                        (Int32, Int64)
+import           Data.IORef                      (IORef, atomicModifyIORef,
+                                                  newIORef)
+import           Data.List                       (find, findIndex)
+import           Data.Maybe                      (mapMaybe, maybeToList)
+import           Data.Time.Clock                 (UTCTime)
+import           Data.Time.Clock.POSIX           (POSIXTime, getPOSIXTime,
+                                                  posixSecondsToUTCTime,
+                                                  utcTimeToPOSIXSeconds)
+import           Data.Time.Format                ()
+import           Data.Typeable                   hiding (cast)
+import           Data.Word                       (Word16, Word32, Word64, Word8)
+import           Numeric                         (readHex, showHex)
+import           Prelude                         hiding (lookup)
+import           System.IO.Unsafe                (unsafePerformIO)
+import           Text.Read                       (Read (..))
 
-import qualified Data.ByteString as S
-import qualified Data.ByteString.Char8 as SC
-import qualified Text.ParserCombinators.ReadP as R
+import qualified Data.ByteString                 as S
+import qualified Data.ByteString.Char8           as SC
+import qualified Text.ParserCombinators.ReadP    as R
 import qualified Text.ParserCombinators.ReadPrec as R (lift, readS_to_Prec)
 
-import Control.Monad.Identity (runIdentity)
-import Network.BSD (getHostName)
-import Data.Text (Text)
+import           Control.Monad.Identity          (runIdentity)
+import           Data.Text                       (Text)
+import           Network.BSD                     (getHostName)
 
-import qualified Data.Text as T
-import qualified Crypto.Hash.MD5 as MD5
+import qualified Crypto.Hash.MD5                 as MD5
+import qualified Data.Text                       as T
 
 getProcessID :: IO Int
 -- ^ Get the current process id.
