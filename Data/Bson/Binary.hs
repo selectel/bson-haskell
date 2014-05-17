@@ -2,6 +2,7 @@
 
 module Data.Bson.Binary (
 	putDocument, getDocument,
+	putDocumentWithSize, getDocumentWithSize,
 	putDouble, getDouble,
 	putInt32, getInt32,
 	putInt64, getInt64,
@@ -14,7 +15,7 @@ import Control.Monad (when)
 import Data.Binary.Get (Get, runGet, getWord8, getWord32be, getWord64be,
                         getWord32le, getWord64le, getLazyByteStringNul,
                         getLazyByteString, getByteString, lookAhead)
-import Data.Binary.Put (Put, runPut, putWord8, putWord32le, putWord64le,
+import Data.Binary.Put (Put, PutM, runPut, putWord8, putWord32le, putWord64le,
                         putWord32be, putWord64be, putLazyByteString,
                         putByteString)
 import Data.Binary.IEEE754 (getFloat64le, putFloat64le)
@@ -141,21 +142,31 @@ getString = do
 	getWord8
 	return $ TE.decodeUtf8 b
 
-putDocument :: Document -> Put
-putDocument es = let b = runPut (mapM_ putField es) in do
-	putInt32 $ (toEnum . fromEnum) (LC.length b + 5)  -- include length and null terminator
-	putLazyByteString b
-	putWord8 0
+putDocumentWithSize :: Document -> PutM Int32
+putDocumentWithSize es =
+	let b = runPut (mapM_ putField es)
+	    len = (toEnum . fromEnum) (LC.length b + 5)  -- include length and null terminator
+	in do
+		  putInt32 len
+		  putLazyByteString b
+		  putWord8 0
+		  return len
 
-getDocument :: Get Document
-getDocument = do
+putDocument :: Document -> Put
+putDocument es = const () <$> putDocumentWithSize es
+
+getDocumentWithSize :: Get (Document,Int32)
+getDocumentWithSize = do
 	len <- subtract 4 <$> getInt32
 	b <- getLazyByteString (fromIntegral len)
-	return (runGet getFields b)
+	return (runGet getFields b, len)
  where
 	getFields = lookAhead getWord8 >>= \done -> if done == 0
 		then return []
 		else (:) <$> getField <*> getFields
+
+getDocument :: Get Document
+getDocument = fst <$> getDocumentWithSize
 
 putArray :: [Value] -> Put
 putArray vs = putDocument (zipWith f [0..] vs)
