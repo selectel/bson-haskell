@@ -1,9 +1,9 @@
 module Main where
 
-import Test.Framework (defaultMain)
+import           Test.Framework         (defaultMain)
 
-import qualified Data.Bson.Tests
 import qualified Data.Bson.Binary.Tests
+import qualified Data.Bson.Tests
 
 main :: IO ()
 main = defaultMain

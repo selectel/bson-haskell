@@ -4,24 +4,33 @@ module Data.Bson.Tests
     ( tests
     ) where
 
-import Control.Applicative ((<$>), (<*>))
-import Data.Int (Int32, Int64)
-import Data.Time.Calendar (Day(ModifiedJulianDay))
-import Data.Time.Clock.POSIX (POSIXTime)
-import Data.Time.Clock (UTCTime(..), addUTCTime)
-import qualified Data.ByteString as S
+import           Control.Applicative                  ((<$>), (<*>))
+import qualified Data.ByteString                      as S
+import           Data.Int                             (Int32, Int64)
+import           Data.Time.Calendar                   (Day (ModifiedJulianDay))
+import           Data.Time.Clock                      (UTCTime (..), addUTCTime)
+import           Data.Time.Clock.POSIX                (POSIXTime)
 
-import Data.Text (Text)
-import Test.Framework (Test, testGroup)
-import Test.Framework.Providers.QuickCheck2 (testProperty)
-import Test.QuickCheck (Arbitrary(..), elements, oneof)
-import qualified Data.Text as T
+import           Data.Text                            (Text)
+import qualified Data.Text                            as T
+import           Test.Framework                       (Test, testGroup)
+import           Test.Framework.Providers.QuickCheck2 (testProperty)
+import           Test.QuickCheck                      (Arbitrary (..), elements,
+                                                       oneof)
 
-import Data.Bson (Val(cast', val), ObjectId(..), MinMaxKey(..), MongoStamp(..),
-                  Symbol(..), Javascript(..), Regex(..), UserDefined(..),
-                  MD5(..), UUID(..), Function(..), Binary(..), Field((:=)),
-                  Document, Value(..))
-import qualified Data.Bson as Bson
+import           Data.Bson                            (Binary (..), Document,
+                                                       Field ((:=)),
+                                                       Function (..),
+                                                       Javascript (..),
+                                                       MD5 (..), MinMaxKey (..),
+                                                       MongoStamp (..),
+                                                       ObjectId (..),
+                                                       Regex (..), Symbol (..),
+                                                       UUID (..),
+                                                       UserDefined (..),
+                                                       Val (cast', val),
+                                                       Value (..))
+import qualified Data.Bson                            as Bson
 
 instance Arbitrary S.ByteString where
     arbitrary = S.pack <$> arbitrary
