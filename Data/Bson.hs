@@ -4,10 +4,11 @@
 -- Use the GHC language extension /OverloadedStrings/ to automatically convert
 -- String literals to Text
 
-{-# LANGUAGE OverloadedStrings, TypeSynonymInstances, FlexibleInstances #-}
-{-# LANGUAGE DeriveDataTypeable, RankNTypes, OverlappingInstances #-}
-{-# LANGUAGE IncoherentInstances, ScopedTypeVariables #-}
-{-# LANGUAGE ForeignFunctionInterface, BangPatterns #-}
+{-# LANGUAGE BangPatterns #-}
+{-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE ForeignFunctionInterface #-}
+{-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE TypeSynonymInstances #-}
 
 module Data.Bson (
 	-- * Document
@@ -95,10 +96,12 @@ valueAt :: Label -> Document -> Value
 -- ^ Value of field in document. Error if missing.
 valueAt k = runIdentity . look k
 
-at :: forall v. (Val v) => Label -> Document -> v
+at :: (Val v) => Label -> Document -> v
 -- ^ Typed value of field in document. Error if missing or wrong type.
-at k doc = maybe err id (lookup k doc)  where
-	err = error $ "expected (" ++ show k ++ " :: " ++ show (typeOf (undefined :: v)) ++ ") in " ++ show doc
+at k doc = result
+	where
+		result = maybe err id (lookup k doc)
+		err = error $ "expected (" ++ show k ++ " :: " ++ show (typeOf result) ++ ") in " ++ show doc
 
 include :: [Label] -> Document -> Document
 -- ^ Only include fields of document in label list
@@ -191,10 +194,14 @@ fval f v = case v of
 
 -- * Value conversion
 
-cast :: forall m a. (Val a, Monad m) => Value -> m a
+cast :: (Val a, Monad m) => Value -> m a
 -- ^ Convert Value to expected type, or fail (Nothing) if not of that type
-cast v = maybe notType return (cast' v) where
-	notType = fail $ "expected " ++ show (typeOf (undefined :: a)) ++ ": " ++ show v
+cast v = maybe notType return castingResult
+	where
+		castingResult = cast' v
+		unMaybe :: Maybe a -> a
+		unMaybe = undefined
+		notType = fail $ "expected " ++ show (typeOf $ unMaybe castingResult) ++ ": " ++ show v
 
 typed :: (Val a) => Value -> a
 -- ^ Convert Value to expected type. Error if not that type.
@@ -208,8 +215,24 @@ typeOfVal = fval typeOf
 
 -- | Haskell types of this class correspond to BSON value types
 class (Typeable a, Show a, Eq a) => Val a where
+
 	val :: a -> Value
+
+	valList :: [a] -> Value
+	valList = Array . map val
+
+	valMaybe :: Maybe a -> Value
+	valMaybe = maybe Null val
+
 	cast' :: Value -> Maybe a
+
+	cast'List :: Value -> Maybe [a]
+	cast'List (Array x) = mapM cast x
+	cast'List _ = Nothing
+
+	cast'Maybe :: Value -> Maybe (Maybe a)
+	cast'Maybe Null = Just Nothing
+	cast'Maybe v = fmap Just (cast' v)
 
 instance Val Double where
 	val = Float
@@ -231,26 +254,33 @@ instance Val Text where
 	cast' (Sym (Symbol x)) = Just x
 	cast' _ = Nothing
 
-instance Val String where
-	val = String . T.pack
-	cast' (String x) = Just $ T.unpack x
-	cast' (Sym (Symbol x)) = Just $ T.unpack x
-	cast' _ = Nothing
+instance Val Char where
+	val x = valList [x]
+	valList = String . T.pack
+	cast' v = cast'List v >>= safeHead
+		where
+			safeHead list = case list of
+				x : _ -> Just x
+				_ -> Nothing
+	cast'List (String x) = Just $ T.unpack x
+	cast'List (Sym (Symbol x)) = Just $ T.unpack x
+	cast'List _ = Nothing
 
-instance Val Document where
-	val = Doc
-	cast' (Doc x) = Just x
+instance Val Field where
+	val x = valList [x]
+	valList = Doc
 	cast' _ = Nothing
+	cast'List v = case v of
+		Doc x -> Just x
+		_ -> Nothing
 
-instance Val [Value] where
-	val = Array
-	cast' (Array x) = Just x
-	cast' _ = Nothing
+instance Val Value where
+	val = id
+	cast' = Just
 
 instance (Val a) => Val [a] where
-	val = Array . map val
-	cast' (Array x) = mapM cast x
-	cast' _ = Nothing
+	val = valList
+	cast' = cast'List
 
 instance Val Binary where
 	val = Bin
@@ -297,17 +327,9 @@ instance Val POSIXTime where
 	cast' (UTC x) = Just (utcTimeToPOSIXSeconds x)
 	cast' _ = Nothing
 
-instance Val (Maybe Value) where
-	val Nothing = Null
-	val (Just v) = v
-	cast' Null = Just Nothing
-	cast' v = Just (Just v)
-
 instance (Val a) => Val (Maybe a) where
-	val Nothing = Null
-	val (Just a) = val a
-	cast' Null = Just Nothing
-	cast' v = fmap Just (cast' v)
+	val = valMaybe
+	cast' = cast'Maybe
 
 instance Val Regex where
 	val = RegEx
@@ -364,11 +386,14 @@ instance Val MinMaxKey where
 	cast' (MinMax x) = Just x
 	cast' _ = Nothing
 
-fitInt :: forall n m. (Integral n, Integral m, Bounded m) => n -> Maybe m
+fitInt :: (Integral n, Integral m, Bounded m) => n -> Maybe m
 -- ^ If number fits in type m then cast to m, otherwise Nothing
-fitInt n = if fromIntegral (minBound :: m) <= n && n <= fromIntegral (maxBound :: m)
-	then Just (fromIntegral n)
-	else Nothing
+fitInt n =
+	if fromIntegral (minBound `asTypeOf` result) <= n && n <= fromIntegral (maxBound `asTypeOf` result)
+		then Just result
+		else Nothing
+	where
+		result = fromIntegral n
 
 -- * Haskell types corresponding to special Bson value types
 
