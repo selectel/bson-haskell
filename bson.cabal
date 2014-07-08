@@ -26,7 +26,7 @@ Library
   Build-depends:      base < 5
                     , time
                     , bytestring
-                    , binary == 0.7.*
+                    , binary >= 0.5 && < 0.8
                     , cryptohash
                     , data-binary-ieee754
                     , mtl >= 2
